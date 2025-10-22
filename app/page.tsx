@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
 interface TwitchChannel {
@@ -16,12 +17,11 @@ type Tab = "browse" | "activity" | "profile";
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("browse");
   const [channelName, setChannelName] = useState("");
-  const [currentChannel, setCurrentChannel] = useState("");
   const [suggestions, setSuggestions] = useState<TwitchChannel[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState("");
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -53,8 +53,6 @@ export default function Home() {
       return;
     }
 
-    setIsSearching(true);
-
     try {
       const response = await fetch(`/api/twitch/search?q=${encodeURIComponent(query)}`);
       
@@ -74,8 +72,6 @@ export default function Home() {
     } catch (err) {
       console.error("Error searching channels:", err);
       setSuggestions([]);
-    } finally {
-      setIsSearching(false);
     }
   }, []);
 
@@ -99,10 +95,9 @@ export default function Home() {
   };
 
   const handleSelectChannel = (channel: TwitchChannel) => {
-    setChannelName(channel.login);
-    setCurrentChannel(channel.login);
     setShowSuggestions(false);
     setSuggestions([]);
+    router.push(`/${channel.login}`);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -113,55 +108,13 @@ export default function Home() {
       return;
     }
 
-    setCurrentChannel(channelName.trim().toLowerCase());
+    const channel = channelName.trim().toLowerCase();
     setShowSuggestions(false);
-  };
-
-  const handleClearStream = () => {
-    setCurrentChannel("");
-    setChannelName("");
-  };
-
-  const getTwitchEmbedUrl = () => {
-    if (!currentChannel) return "";
-    
-    // Utiliser le parent domain pour Twitch
-    const parent = typeof window !== 'undefined' 
-      ? window.location.hostname 
-      : 'localhost';
-    
-    return `https://player.twitch.tv/?channel=${currentChannel}&parent=${parent}&muted=false`;
+    router.push(`/${channel}`);
   };
 
   // Rendu du contenu selon l'onglet actif
   const renderContent = () => {
-    // Si un stream est sélectionné, afficher le player
-    if (currentChannel) {
-      return (
-        <div className={styles.streamPlayer}>
-          <div className={styles.streamHeader}>
-            <h2 className={styles.streamTitle}>
-              🔴 {currentChannel}
-            </h2>
-            <button 
-              onClick={handleClearStream}
-              className={styles.changeStreamButton}
-            >
-              ✕
-            </button>
-          </div>
-          
-          <iframe
-            src={getTwitchEmbedUrl()}
-            height="100%"
-            width="100%"
-            allowFullScreen
-            className={styles.twitchIframe}
-          />
-        </div>
-      );
-    }
-
     switch (activeTab) {
       case "browse":
         return (
@@ -208,17 +161,11 @@ export default function Home() {
                         {channel.isLive && (
                           <span className={styles.liveBadge}>LIVE</span>
                         )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                
-                {isSearching && (
-                  <div className={styles.searchingIndicator}>
-                    <span className={styles.spinner}>⏳</span> Recherche...
-                  </div>
-                )}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
               
               {error && <p className={styles.error}>{error}</p>}
             </div>
