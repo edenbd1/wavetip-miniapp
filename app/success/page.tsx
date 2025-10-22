@@ -1,16 +1,17 @@
 "use client";
 
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
+import { useRouter } from 'next/navigation';
 import { minikitConfig } from "../../minikit.config";
 import styles from "./page.module.css";
 
 export default function Success() {
-
+  const router = useRouter();
   const { composeCastAsync } = useComposeCast();
   
   const handleShare = async () => {
     try {
-      const text = `Yay! I just joined the waitlist for ${minikitConfig.miniapp.name.toUpperCase()}! `;
+      const text = `Je regarde des streams Twitch sur ${minikitConfig.miniapp.name}! 📺\n\nRejoignez-moi sur Base App pour regarder vos streamers préférés! 🎮`;
       
       const result = await composeCastAsync({
         text: text,
@@ -28,6 +29,10 @@ export default function Success() {
     }
   };
 
+  const handleBackToApp = () => {
+    router.push('/');
+  };
+
   return (
     <div className={styles.container}>
       <button className={styles.closeButton} type="button">
@@ -43,16 +48,24 @@ export default function Success() {
             </div>
           </div>
           
-          <h1 className={styles.title}>Welcome to the {minikitConfig.miniapp.name.toUpperCase()}!</h1>
+          <h1 className={styles.title}>
+            📺 Profitez du stream!
+          </h1>
           
           <p className={styles.subtitle}>
-            You&apos;re in! We&apos;ll notify you as soon as we launch.<br />
-            Get ready to experience the future of onchain marketing.
+            Vous regardez maintenant des streams Twitch sur Base App.<br />
+            Partagez cette expérience avec vos amis!
           </p>
 
-          <button onClick={handleShare} className={styles.shareButton}>
-            SHARE
-          </button>
+          <div className={styles.buttonGroup}>
+            <button onClick={handleShare} className={styles.shareButton}>
+              PARTAGER SUR FARCASTER
+            </button>
+            
+            <button onClick={handleBackToApp} className={styles.backButton}>
+              RETOUR À L&apos;APP
+            </button>
+          </div>
         </div>
       </div>
     </div>

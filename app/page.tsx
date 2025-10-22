@@ -1,120 +1,307 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useQuickAuth,useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useRouter } from "next/navigation";
-import { minikitConfig } from "../minikit.config";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import styles from "./page.module.css";
 
-interface AuthResponse {
-  success: boolean;
-  user?: {
-    fid: number; // FID is the unique identifier for the user
-    issuedAt?: number;
-    expiresAt?: number;
-  };
-  message?: string; // Error messages come as 'message' not 'error'
+interface TwitchChannel {
+  id: string;
+  login: string;
+  displayName: string;
+  isLive: boolean;
+  thumbnailUrl: string;
+  gameName: string;
 }
 
+type Tab = "browse" | "activity" | "profile";
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
-  const [email, setEmail] = useState("");
+  const [activeTab, setActiveTab] = useState<Tab>("browse");
+  const [channelName, setChannelName] = useState("");
+  const [currentChannel, setCurrentChannel] = useState("");
+  const [suggestions, setSuggestions] = useState<TwitchChannel[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
+  const searchRef = useRef<HTMLDivElement>(null);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize the  miniapp
+  // Initialize the miniapp
   useEffect(() => {
     if (!isFrameReady) {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
- 
-  
 
-  // If you need to verify the user's identity, you can use the useQuickAuth hook.
-  // This hook will verify the user's signature and return the user's FID. You can update
-  // this to meet your needs. See the /app/api/auth/route.ts file for more details.
-  // Note: If you don't need to verify the user's identity, you can get their FID and other user data
-  // via `context.user.fid`.
-  // const { data, isLoading, error } = useQuickAuth<{
-  //   userFid: string;
-  // }>("/api/auth");
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
 
-  const { data: authData, isLoading: isAuthLoading, error: authError } = useQuickAuth<AuthResponse>(
-    "/api/auth",
-    { method: "GET" }
-  );
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  // Recherche sur l'API Twitch
+  const searchTwitchChannels = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const response = await fetch(`/api/twitch/search?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error("Search failed");
+      }
+
+      const data = await response.json();
+      
+      if (data.channels && data.channels.length > 0) {
+        setSuggestions(data.channels);
+        setShowSuggestions(true);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (err) {
+      console.error("Error searching channels:", err);
+      setSuggestions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  const handleInputChange = (value: string) => {
+    setChannelName(value);
+    setError("");
+    
+    // Debounce la recherche pour éviter trop de requêtes
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    if (value.trim().length >= 2) {
+      debounceTimer.current = setTimeout(() => {
+        searchTwitchChannels(value.trim());
+      }, 300); // Attend 300ms après la dernière frappe
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSelectChannel = (channel: TwitchChannel) => {
+    setChannelName(channel.login);
+    setCurrentChannel(channel.login);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    // Check authentication first
-    if (isAuthLoading) {
-      setError("Please wait while we verify your identity...");
-      return;
-    }
-
-    if (authError || !authData?.success) {
-      setError("Please authenticate to join the waitlist");
-      return;
-    }
-
-    if (!email) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-    // TODO: Save email to database/API with user FID
-    console.log("Valid email submitted:", email);
-    console.log("User authenticated:", authData.user);
     
-    // Navigate to success page
-    router.push("/success");
+    if (!channelName.trim()) {
+      setError("Entrez un nom de channel");
+      return;
+    }
+
+    setCurrentChannel(channelName.trim().toLowerCase());
+    setShowSuggestions(false);
+  };
+
+  const handleClearStream = () => {
+    setCurrentChannel("");
+    setChannelName("");
+  };
+
+  const getTwitchEmbedUrl = () => {
+    if (!currentChannel) return "";
+    
+    // Utiliser le parent domain pour Twitch
+    const parent = typeof window !== 'undefined' 
+      ? window.location.hostname 
+      : 'localhost';
+    
+    return `https://player.twitch.tv/?channel=${currentChannel}&parent=${parent}&muted=false`;
+  };
+
+  // Rendu du contenu selon l'onglet actif
+  const renderContent = () => {
+    // Si un stream est sélectionné, afficher le player
+    if (currentChannel) {
+      return (
+        <div className={styles.streamPlayer}>
+          <div className={styles.streamHeader}>
+            <h2 className={styles.streamTitle}>
+              🔴 {currentChannel}
+            </h2>
+            <button 
+              onClick={handleClearStream}
+              className={styles.changeStreamButton}
+            >
+              ✕
+            </button>
+          </div>
+          
+          <iframe
+            src={getTwitchEmbedUrl()}
+            height="100%"
+            width="100%"
+            allowFullScreen
+            className={styles.twitchIframe}
+          />
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case "browse":
+        return (
+          <div className={styles.browseContent}>
+            <div className={styles.searchContainer}>
+              <div className={styles.searchWrapper} ref={searchRef}>
+                <form onSubmit={handleSearch} className={styles.searchForm}>
+                  <input
+                    type="text"
+                    placeholder="Rechercher un channel Twitch..."
+                    value={channelName}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onFocus={() => channelName && setShowSuggestions(true)}
+                    className={styles.searchInput}
+                    autoComplete="off"
+                  />
+                  <button type="submit" className={styles.searchButton}>
+                    🔍
+                  </button>
+                </form>
+
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className={styles.suggestionsDropdown}>
+                    {suggestions.map((channel) => (
+                      <button
+                        key={channel.id}
+                        onClick={() => handleSelectChannel(channel)}
+                        className={styles.suggestionItem}
+                        type="button"
+                      >
+                        <span className={styles.suggestionIcon}>
+                          {channel.isLive ? "🔴" : "📺"}
+                        </span>
+                        <div className={styles.suggestionContent}>
+                          <div className={styles.suggestionName}>
+                            {channel.displayName}
+                          </div>
+                          {channel.gameName && (
+                            <div className={styles.suggestionGame}>
+                              {channel.gameName}
+                            </div>
+                          )}
+                        </div>
+                        {channel.isLive && (
+                          <span className={styles.liveBadge}>LIVE</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {isSearching && (
+                  <div className={styles.searchingIndicator}>
+                    <span className={styles.spinner}>⏳</span> Recherche...
+                  </div>
+                )}
+              </div>
+              
+              {error && <p className={styles.error}>{error}</p>}
+            </div>
+          </div>
+        );
+
+      case "activity":
+        return (
+          <div className={styles.tabContent}>
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📊</div>
+              <h2 className={styles.emptyTitle}>Activité</h2>
+              <p className={styles.emptyText}>
+                Vos streams récents et votre historique apparaîtront ici
+              </p>
+            </div>
+          </div>
+        );
+
+      case "profile":
+        return (
+          <div className={styles.tabContent}>
+            <div className={styles.profileContent}>
+              <div className={styles.profileHeader}>
+                <div className={styles.profileAvatar}>
+                  {context?.user?.displayName?.charAt(0) || "?"}
+                </div>
+                <h2 className={styles.profileName}>
+                  {context?.user?.displayName || "User"}
+                </h2>
+                <p className={styles.profileFid}>
+                  FID: {context?.user?.fid || "---"}
+                </p>
+              </div>
+              
+              <div className={styles.profileStats}>
+                <div className={styles.statItem}>
+                  <div className={styles.statValue}>0</div>
+                  <div className={styles.statLabel}>Streams regardés</div>
+                </div>
+                <div className={styles.statItem}>
+                  <div className={styles.statValue}>0</div>
+                  <div className={styles.statLabel}>Favoris</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
-    <div className={styles.container}>
-      <button className={styles.closeButton} type="button">
-        ✕
-      </button>
-      
-      <div className={styles.content}>
-        <div className={styles.waitlistForm}>
-          <h1 className={styles.title}>Join {minikitConfig.miniapp.name.toUpperCase()}</h1>
-          
-          <p className={styles.subtitle}>
-             Hey {context?.user?.displayName || "there"}, Get early access and be the first to experience the future of<br />
-            crypto marketing strategy.
-          </p>
+    <div className={styles.mobileApp}>
+      <main className={styles.mainContent}>
+        {renderContent()}
+      </main>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <input
-              type="email"
-              placeholder="Your amazing email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.emailInput}
-            />
-            
-            {error && <p className={styles.error}>{error}</p>}
-            
-            <button type="submit" className={styles.joinButton}>
-              JOIN WAITLIST
-            </button>
-          </form>
-        </div>
-      </div>
+      {/* Bottom Navigation */}
+      <nav className={styles.bottomNav}>
+        <button
+          className={`${styles.navItem} ${activeTab === "browse" ? styles.active : ""}`}
+          onClick={() => setActiveTab("browse")}
+        >
+          <span className={styles.navIcon}>🔍</span>
+          <span className={styles.navLabel}>Browse</span>
+        </button>
+
+        <button
+          className={`${styles.navItem} ${activeTab === "activity" ? styles.active : ""}`}
+          onClick={() => setActiveTab("activity")}
+        >
+          <span className={styles.navIcon}>📊</span>
+          <span className={styles.navLabel}>Activity</span>
+        </button>
+
+        <button
+          className={`${styles.navItem} ${activeTab === "profile" ? styles.active : ""}`}
+          onClick={() => setActiveTab("profile")}
+        >
+          <span className={styles.navIcon}>👤</span>
+          <span className={styles.navLabel}>Profile</span>
+        </button>
+      </nav>
     </div>
   );
 }

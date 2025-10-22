@@ -134,9 +134,18 @@
   font-weight: 300;
 }
 
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 2rem;
+}
+
 .shareButton {
-  background: #f7d954;
-  color: #000;
+  background: linear-gradient(135deg, #9146FF 0%, #772CE8 100%);
+  color: white;
   border: none;
   padding: 1rem 3rem;
   font-size: 1rem;
@@ -146,12 +155,33 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-top: 1rem;
-  box-shadow: 0 4px 20px rgba(247, 217, 84, 0.3);
+  box-shadow: 0 4px 20px rgba(145, 70, 255, 0.4);
+  width: 100%;
 }
 
 .shareButton:hover {
-  background: #f5d73a;
+  background: linear-gradient(135deg, #a970ff 0%, #8b4ef5 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(247, 217, 84, 0.4);
+  box-shadow: 0 6px 25px rgba(145, 70, 255, 0.5);
+}
+
+.backButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 1rem 3rem;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
