@@ -67,11 +67,11 @@
   left: 0;
   right: 0;
   display: flex;
-  background: rgba(10, 10, 10, 0.98);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(145, 70, 255, 0.3);
-  padding: 0.5rem 0;
+  background: #1a1a1a;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 0.25rem;
   z-index: 1000;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .navItem {
@@ -81,22 +81,32 @@
   align-items: center;
   justify-content: center;
   gap: 0.25rem;
-  padding: 0.5rem;
+  padding: 0.5rem 0.25rem;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.navIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 40px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
 .navIcon {
-  font-size: 1.5rem;
+  width: 24px;
+  height: 24px;
 }
 
 .navLabel {
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
