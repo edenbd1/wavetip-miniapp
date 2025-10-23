@@ -1,6 +1,6 @@
 {
-  "name": "new-mini-app-quickstart",
-  "version": "0.1.0",
+  "name": "wavetip",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
