@@ -104,7 +104,7 @@ export default function Home() {
     e.preventDefault();
     
     if (!channelName.trim()) {
-      setError("Entrez un nom de channel");
+      setError("Enter a channel name");
       return;
     }
 
@@ -124,7 +124,7 @@ export default function Home() {
                 <form onSubmit={handleSearch} className={styles.searchForm}>
                   <input
                     type="text"
-                    placeholder="Rechercher un channel Twitch..."
+                    placeholder="Search Twitch channels..."
                     value={channelName}
                     onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => channelName && setShowSuggestions(true)}
@@ -177,9 +177,9 @@ export default function Home() {
           <div className={styles.tabContent}>
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📊</div>
-              <h2 className={styles.emptyTitle}>Activité</h2>
+              <h2 className={styles.emptyTitle}>Activity</h2>
               <p className={styles.emptyText}>
-                Vos streams récents et votre historique apparaîtront ici
+                Your recent streams and history will appear here
               </p>
             </div>
           </div>
@@ -204,11 +204,11 @@ export default function Home() {
               <div className={styles.profileStats}>
                 <div className={styles.statItem}>
                   <div className={styles.statValue}>0</div>
-                  <div className={styles.statLabel}>Streams regardés</div>
+                  <div className={styles.statLabel}>Streams Watched</div>
                 </div>
                 <div className={styles.statItem}>
                   <div className={styles.statValue}>0</div>
-                  <div className={styles.statLabel}>Favoris</div>
+                  <div className={styles.statLabel}>Favorites</div>
                 </div>
               </div>
             </div>
@@ -221,25 +221,25 @@ export default function Home() {
             <div className={styles.aboutContent}>
               <div className={styles.aboutHeader}>
                 <div className={styles.aboutIcon}>📺</div>
-                <h2 className={styles.aboutTitle}>Twitch Viewer</h2>
+                <h2 className={styles.aboutTitle}>WaveTip</h2>
                 <p className={styles.aboutVersion}>Version 1.0.0</p>
               </div>
               
               <div className={styles.aboutSection}>
-                <h3 className={styles.aboutSectionTitle}>À propos</h3>
+                <h3 className={styles.aboutSectionTitle}>About</h3>
                 <p className={styles.aboutText}>
-                  Regardez vos streamers Twitch préférés directement dans Base App. 
-                  Recherchez n&apos;importe quel channel et profitez du stream en direct.
+                  Watch your favorite Twitch streamers directly in Base App. 
+                  Search any channel and enjoy live streams.
                 </p>
               </div>
 
               <div className={styles.aboutSection}>
-                <h3 className={styles.aboutSectionTitle}>Fonctionnalités</h3>
+                <h3 className={styles.aboutSectionTitle}>Features</h3>
                 <ul className={styles.aboutList}>
-                  <li>🔍 Recherche en temps réel</li>
-                  <li>🔴 Streams live</li>
-                  <li>📺 Player intégré</li>
-                  <li>📱 Interface mobile</li>
+                  <li>🔍 Real-time search</li>
+                  <li>🔴 Live streams</li>
+                  <li>📺 Integrated player</li>
+                  <li>📱 Mobile interface</li>
                 </ul>
               </div>
 
