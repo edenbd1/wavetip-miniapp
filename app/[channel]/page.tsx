@@ -17,11 +17,12 @@ export default function StreamerPage() {
   }, [setFrameReady, isFrameReady]);
 
   const getTwitchEmbedUrl = () => {
+    // Utiliser le hostname actuel (localhost en dev, vercel.app en prod)
     const parent = typeof window !== 'undefined' 
       ? window.location.hostname 
-      : 'localhost';
+      : 'new-mini-app-quickstart-one-green.vercel.app';
     
-    return `https://player.twitch.tv/?channel=${channel}&parent=${parent}&muted=false`;
+    return `https://player.twitch.tv/?channel=${channel}&parent=${parent}&muted=false&autoplay=true`;
   };
 
   const handleBack = () => {
