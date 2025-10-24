@@ -23,7 +23,7 @@ export const minikitConfig = {
     description: "Watch your favorite Twitch streamers directly in Base App. Search any channel and enjoy live streams.",
     screenshotUrls: [`${ROOT_URL}/screenshot-portrait.jpg`],
     iconUrl: `${ROOT_URL}/blue-icon.jpg`,
-    splashImageUrl: `${ROOT_URL}/blue-hero.png`,
+    splashImageUrl: `${ROOT_URL}/blue-hero.jpg`,
     splashBackgroundColor: "#9146FF",
     homeUrl: ROOT_URL,
     webhookUrl: `${ROOT_URL}/api/webhook`,
