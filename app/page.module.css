@@ -380,6 +380,86 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Wallet Section */
+.walletSection {
+  width: 100%;
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 106, 254, 0.3);
+  border-radius: 12px;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.walletConnected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.walletAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.walletName {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.walletAddress {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+}
+
+.walletDisconnected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.walletDescription {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.connectButton {
+  background: linear-gradient(135deg, #006afe 0%, #0052cc 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.875rem 2rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 20px rgba(0, 106, 254, 0.3) !important;
+}
+
+.connectButton:hover {
+  background: linear-gradient(135deg, #3395ff 0%, #0080ff 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 25px rgba(0, 106, 254, 0.4) !important;
+}
+
+.avatarConnectButton {
+  display: none;
+}
+
 .profileStats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

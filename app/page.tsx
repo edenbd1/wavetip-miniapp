@@ -2,6 +2,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter } from "next/navigation";
+import { 
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownDisconnect,
+} from '@coinbase/onchainkit/wallet';
+import { Address, Avatar, Name, Identity } from '@coinbase/onchainkit/identity';
+import { useAccount } from 'wagmi';
 import styles from "./page.module.css";
 
 interface TwitchChannel {
@@ -18,6 +26,7 @@ type Tab = "home" | "activity" | "profile" | "about";
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
   const router = useRouter();
+  const { address, isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [channelName, setChannelName] = useState("");
   const [suggestions, setSuggestions] = useState<TwitchChannel[]>([]);
@@ -32,7 +41,7 @@ export default function Home() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
-
+ 
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -208,6 +217,43 @@ export default function Home() {
                   FID: {context?.user?.fid || "---"}
                 </p>
               </div>
+
+              {/* Wallet Connection */}
+              <div className={styles.walletSection}>
+                <h3 className={styles.sectionTitle}>Wallet</h3>
+                {isConnected && address ? (
+                  <div className={styles.walletConnected}>
+                    <Identity
+                      address={address}
+                      schemaId="0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9"
+                    >
+                      <Avatar className={styles.walletAvatar} />
+                      <Name className={styles.walletName} />
+                      <Address className={styles.walletAddress} />
+                    </Identity>
+                    <Wallet>
+                      <WalletDropdown>
+                        <WalletDropdownDisconnect />
+                      </WalletDropdown>
+                    </Wallet>
+                  </div>
+                ) : (
+                  <div className={styles.walletDisconnected}>
+                    <p className={styles.walletDescription}>
+                      Connect your wallet to tip streamers with USDC on Base
+                    </p>
+                    <Wallet>
+                      <ConnectWallet className={styles.connectButton}>
+                        <Avatar className={styles.avatarConnectButton} />
+                        <Name />
+                      </ConnectWallet>
+                      <WalletDropdown>
+                        <WalletDropdownDisconnect />
+                      </WalletDropdown>
+                    </Wallet>
+                  </div>
+                )}
+              </div>
               
               <div className={styles.profileStats}>
                 <div className={styles.statItem}>
@@ -279,8 +325,8 @@ export default function Home() {
             </svg>
           </div>
           <span className={styles.navLabel}>Home</span>
-        </button>
-
+      </button>
+      
         <button
           className={`${styles.navItem} ${activeTab === "activity" ? styles.active : ""}`}
           onClick={() => setActiveTab("activity")}
@@ -318,7 +364,7 @@ export default function Home() {
             </svg>
           </div>
           <span className={styles.navLabel}>About</span>
-        </button>
+            </button>
       </nav>
     </div>
   );
