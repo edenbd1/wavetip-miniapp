@@ -190,9 +190,17 @@ export default function Home() {
           <div className={styles.tabContent}>
             <div className={styles.profileContent}>
               <div className={styles.profileHeader}>
-                <div className={styles.profileAvatar}>
-                  {context?.user?.displayName?.charAt(0) || "?"}
-                </div>
+                {context?.user?.pfpUrl ? (
+                  <img 
+                    src={context.user.pfpUrl} 
+                    alt={context.user.displayName || "Profile"} 
+                    className={styles.profileAvatarImage}
+                  />
+                ) : (
+                  <div className={styles.profileAvatar}>
+                    {context?.user?.displayName?.charAt(0) || "?"}
+                  </div>
+                )}
                 <h2 className={styles.profileName}>
                   {context?.user?.displayName || "User"}
                 </h2>

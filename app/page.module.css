@@ -358,6 +358,16 @@
   color: white;
 }
 
+.profileAvatarImage {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 1rem;
+  border: 3px solid #006afe;
+  box-shadow: 0 4px 20px rgba(0, 106, 254, 0.3);
+}
+
 .profileName {
   font-size: 1.5rem;
   font-weight: 700;
