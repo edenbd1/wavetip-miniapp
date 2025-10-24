@@ -28,7 +28,7 @@ export const minikitConfig = {
     homeUrl: ROOT_URL,
     webhookUrl: `${ROOT_URL}/api/webhook`,
     primaryCategory: "social",
-    tags: ["twitch", "streaming", "entertainment", "live", "gaming", "tips", "crypto"],
+    tags: ["twitch", "streaming", "live", "tips", "crypto"],
     heroImageUrl: `${ROOT_URL}/blue-hero.png`,
     tagline: "Watch streams, tip creators",
     ogTitle: "WaveTip - Watch & Tip Streams",
