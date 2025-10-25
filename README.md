@@ -7,7 +7,7 @@
 ---
 
 <div align="center">
-  <img src="public/blue-icon.jpg" alt="WaveTip Logo" width="160" />
+  <img src="public/logo_wavetip.png" alt="WaveTip Logo" width="160" />
   <p><em>Watch live Twitch streams and send USDC tips to your favorite creators — all powered by Base.</em></p>
 </div>
 
