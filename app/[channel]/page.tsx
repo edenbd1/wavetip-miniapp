@@ -2,9 +2,8 @@
 import { useParams, useRouter } from "next/navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect, useState } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
-import { parseUnits } from 'viem';
-import { baseSepolia } from 'wagmi/chains';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { parseUnits, formatUnits } from 'viem';
 import styles from "./page.module.css";
 
 // WaveTip Contract on Base Sepolia
@@ -28,7 +27,7 @@ const WAVETIP_ABI = [
   },
 ] as const;
 
-// USDC ABI (pour l'approval)
+// USDC ABI (pour l'approval et lecture)
 const USDC_ABI = [
   {
     inputs: [
@@ -50,6 +49,15 @@ const USDC_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [
+      { name: 'account', type: 'address' }
+    ],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
 
 export default function StreamerPage() {
@@ -57,18 +65,38 @@ export default function StreamerPage() {
   const router = useRouter();
   const { isFrameReady, setFrameReady } = useMiniKit();
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
   const channel = (params.channel as string).toLowerCase();
   
   const [customAmount, setCustomAmount] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [tipStatus, setTipStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
-  const [wrongNetwork, setWrongNetwork] = useState(false);
+  const [tipStatus, setTipStatus] = useState<'idle' | 'pending' | 'approving' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
+  });
+
+  // Lire l'allowance USDC
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: 'allowance',
+    args: address ? [address, WAVETIP_CONTRACT] : undefined,
+    query: {
+      enabled: !!address && isConnected,
+    },
+  });
+
+  // Lire la balance USDC
+  const { data: usdcBalance } = useReadContract({
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && isConnected,
+    },
   });
 
   useEffect(() => {
@@ -77,63 +105,103 @@ export default function StreamerPage() {
     }
   }, [setFrameReady, isFrameReady]);
 
-  // Vérifier si on est sur le bon réseau
-  useEffect(() => {
-    if (isConnected && chainId !== baseSepolia.id) {
-      setWrongNetwork(true);
-    } else {
-      setWrongNetwork(false);
-    }
-  }, [isConnected, chainId]);
-
   useEffect(() => {
     if (isConfirmed) {
-      setTipStatus('success');
-      setTimeout(() => {
+      // Si c'était un approve, refetch l'allowance et réinitialiser
+      if (tipStatus === 'approving') {
+        refetchAllowance();
         setTipStatus('idle');
-        setShowCustomInput(false);
-        setCustomAmount('');
-      }, 3000);
+        setErrorMessage('✅ USDC approved! Click tip again to send.');
+        setTimeout(() => setErrorMessage(''), 5000);
+      } else {
+        // C'était un tip
+        setTipStatus('success');
+        setTimeout(() => {
+          setTipStatus('idle');
+          setShowCustomInput(false);
+          setCustomAmount('');
+        }, 3000);
+      }
     }
-  }, [isConfirmed]);
-
-  const handleSwitchNetwork = async () => {
-    try {
-      await switchChain({ chainId: baseSepolia.id });
-    } catch (error) {
-      console.error('Error switching network:', error);
-      alert('Failed to switch network. Please switch to Base Sepolia manually in your wallet.');
-    }
-  };
+  }, [isConfirmed, tipStatus, refetchAllowance]);
 
   const handleTip = async (amount: string) => {
     if (!isConnected || !address) {
-      alert('Please connect your wallet first');
+      setErrorMessage('Please connect your wallet first');
+      setTipStatus('error');
+      setTimeout(() => {
+        setTipStatus('idle');
+        setErrorMessage('');
+      }, 3000);
       return;
     }
 
     try {
-      setTipStatus('pending');
-      
-      // Convert amount to USDC (6 decimals)
+      setErrorMessage('');
       const amountInWei = parseUnits(amount, 6);
 
-      // Note: L'utilisateur doit avoir approuvé USDC au préalable
-      // Pour l'instant on essaie directement de tip
-      // TODO: Vérifier allowance et demander approve si nécessaire
+      // 1. Vérifier la balance USDC
+      if (usdcBalance !== undefined && usdcBalance < amountInWei) {
+        setErrorMessage(`Insufficient USDC balance. You have ${formatUnits(usdcBalance, 6)} USDC`);
+        setTipStatus('error');
+        setTimeout(() => {
+          setTipStatus('idle');
+          setErrorMessage('');
+        }, 5000);
+        return;
+      }
+
+      // 2. Vérifier l'allowance et approuver si nécessaire
+      if (allowance === undefined || allowance < amountInWei) {
+        setTipStatus('approving');
+        console.log('Approval required, requesting approve...');
+        
+        // Approuver un montant élevé pour éviter de réapprouver à chaque fois
+        const approveAmount = parseUnits('1000000', 6); // 1M USDC
+        
+        writeContract({
+          address: USDC_ADDRESS,
+          abi: USDC_ABI,
+          functionName: 'approve',
+          args: [WAVETIP_CONTRACT, approveAmount],
+        });
+        
+        // Attendre que l'approve soit confirmé avant de continuer
+        // L'utilisateur devra cliquer à nouveau sur le bouton tip après l'approve
+        return;
+      }
+
+      // 3. Envoyer le tip
+      setTipStatus('pending');
+      console.log('Sending tip:', { channel, amount: formatUnits(amountInWei, 6) });
       
-      // Send tip to WaveTip contract
-      // Args: streamerTag, tipType, amount
       writeContract({
         address: WAVETIP_CONTRACT,
         abi: WAVETIP_ABI,
         functionName: 'tip',
         args: [channel, 'donation', amountInWei],
       });
-    } catch (error) {
-      console.error('Error sending tip:', error);
+      
+    } catch (error: unknown) {
+      console.error('Error in handleTip:', error);
+      
+      let message = 'Failed to send tip';
+      if (error instanceof Error) {
+        if (error.message.includes('User rejected')) {
+          message = 'Transaction rejected';
+        } else if (error.message.includes('insufficient funds')) {
+          message = 'Insufficient funds for gas';
+        } else {
+          message = error.message;
+        }
+      }
+      
+      setErrorMessage(message);
       setTipStatus('error');
-      setTimeout(() => setTipStatus('idle'), 3000);
+      setTimeout(() => {
+        setTipStatus('idle');
+        setErrorMessage('');
+      }, 5000);
     }
   };
 
@@ -185,25 +253,15 @@ export default function StreamerPage() {
         <div className={styles.tipHeader}>
           <h3 className={styles.tipTitle}>💰 Tip {channel} with USDC</h3>
           <span className={styles.networkBadge}>⛓️ Base Sepolia</span>
+          {isConnected && usdcBalance !== undefined && (
+            <p className={styles.balanceInfo}>
+              Balance: {parseFloat(formatUnits(usdcBalance, 6)).toFixed(2)} USDC
+            </p>
+          )}
           {!isConnected && (
             <p className={styles.tipSubtitle}>Connect wallet in Profile to tip</p>
           )}
         </div>
-
-        {/* Wrong Network Warning */}
-        {wrongNetwork && isConnected && (
-          <div className={styles.wrongNetworkAlert}>
-            <p className={styles.wrongNetworkText}>
-              ⚠️ Wrong network detected. Please switch to Base Sepolia.
-            </p>
-            <button 
-              onClick={handleSwitchNetwork}
-              className={styles.switchNetworkButton}
-            >
-              Switch to Base Sepolia
-            </button>
-          </div>
-        )}
 
         {isConnected ? (
           <div className={styles.tipContent}>
@@ -211,28 +269,28 @@ export default function StreamerPage() {
               <button
                 onClick={() => handleTip('1')}
                 className={styles.tipButton}
-                disabled={wrongNetwork || isPending || isConfirming || tipStatus === 'pending'}
+                disabled={isPending || isConfirming || tipStatus === 'pending'}
               >
                 $1
               </button>
               <button
                 onClick={() => handleTip('2')}
                 className={styles.tipButton}
-                disabled={wrongNetwork || isPending || isConfirming || tipStatus === 'pending'}
+                disabled={isPending || isConfirming || tipStatus === 'pending'}
               >
                 $2
               </button>
               <button
                 onClick={() => handleTip('5')}
                 className={styles.tipButton}
-                disabled={wrongNetwork || isPending || isConfirming || tipStatus === 'pending'}
+                disabled={isPending || isConfirming || tipStatus === 'pending'}
               >
                 $5
               </button>
               <button
                 onClick={() => setShowCustomInput(!showCustomInput)}
                 className={`${styles.tipButton} ${styles.tipButtonCustom}`}
-                disabled={wrongNetwork || isPending || isConfirming || tipStatus === 'pending'}
+                disabled={isPending || isConfirming || tipStatus === 'pending'}
               >
                 Custom
               </button>
@@ -252,21 +310,27 @@ export default function StreamerPage() {
                 <button
                   onClick={handleCustomTip}
                   className={styles.sendCustomButton}
-                  disabled={wrongNetwork || isPending || isConfirming || tipStatus === 'pending'}
+                  disabled={isPending || isConfirming || tipStatus === 'pending'}
                 >
                   Send
                 </button>
               </div>
             )}
 
-            {(isPending || isConfirming || tipStatus === 'pending') && (
+            {tipStatus === 'approving' && (
+              <p className={styles.tipStatusPending}>⏳ Approving USDC... Please confirm in your wallet</p>
+            )}
+            {(isPending || isConfirming || tipStatus === 'pending') && tipStatus !== 'approving' && (
               <p className={styles.tipStatusPending}>⏳ Sending tip...</p>
             )}
             {tipStatus === 'success' && (
               <p className={styles.tipStatusSuccess}>✅ Tip sent successfully!</p>
             )}
             {tipStatus === 'error' && (
-              <p className={styles.tipStatusError}>❌ Error sending tip</p>
+              <p className={styles.tipStatusError}>❌ {errorMessage || 'Error sending tip'}</p>
+            )}
+            {errorMessage && tipStatus !== 'error' && (
+              <p className={styles.tipStatusInfo}>{errorMessage}</p>
             )}
           </div>
         ) : (
