@@ -82,19 +82,6 @@
   margin: 0 0 0.25rem 0;
 }
 
-.networkBadge {
-  display: inline-block;
-  background: rgba(0, 106, 254, 0.15);
-  color: #006afe;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  border: 1px solid rgba(0, 106, 254, 0.3);
-  margin: 0.5rem 0;
-  letter-spacing: 0.3px;
-}
-
 .tipSubtitle {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.5);

@@ -252,7 +252,6 @@ export default function StreamerPage() {
       <div className={styles.tipSection}>
         <div className={styles.tipHeader}>
           <h3 className={styles.tipTitle}>💰 Tip {channel} with USDC</h3>
-          <span className={styles.networkBadge}>⛓️ Base Sepolia</span>
           {isConnected && usdcBalance !== undefined && (
             <p className={styles.balanceInfo}>
               Balance: {parseFloat(formatUnits(usdcBalance, 6)).toFixed(2)} USDC
