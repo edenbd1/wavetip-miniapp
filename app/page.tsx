@@ -35,6 +35,54 @@ export default function Home() {
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
+  // Simulated tips data
+  const simulatedTips = [
+    {
+      id: 1,
+      streamer: "gotaga",
+      amount: "5.00",
+      timestamp: "2 hours ago",
+      status: "completed",
+      emoji: "🎮"
+    },
+    {
+      id: 2,
+      streamer: "lofigirl",
+      amount: "2.00",
+      timestamp: "5 hours ago",
+      status: "completed",
+      emoji: "🎵"
+    },
+    {
+      id: 3,
+      streamer: "inoxtag",
+      amount: "10.00",
+      timestamp: "1 day ago",
+      status: "completed",
+      emoji: "🏔️"
+    },
+    {
+      id: 4,
+      streamer: "squeezie",
+      amount: "3.50",
+      timestamp: "2 days ago",
+      status: "completed",
+      emoji: "👾"
+    },
+    {
+      id: 5,
+      streamer: "aminematue",
+      amount: "1.00",
+      timestamp: "3 days ago",
+      status: "completed",
+      emoji: "🎬"
+    },
+  ];
+
+  // Calculate stats from tips
+  const totalTips = simulatedTips.length;
+  const totalAmount = simulatedTips.reduce((sum, tip) => sum + parseFloat(tip.amount), 0).toFixed(2);
+
   // Initialize the miniapp
   useEffect(() => {
     if (!isFrameReady) {
@@ -178,18 +226,111 @@ export default function Home() {
               
               {error && <p className={styles.error}>{error}</p>}
             </div>
+
+            {/* Categories Section */}
+            <div className={styles.categoriesSection}>
+              <h3 className={styles.categoriesTitle}>Popular Categories</h3>
+              <div className={styles.categoriesGrid}>
+                <div className={styles.categoryCard}>
+                  <img 
+                    src="https://static-cdn.jtvnw.net/ttv-boxart/21779-285x380.jpg"
+                    alt="League of Legends"
+                    className={styles.categoryImage}
+                  />
+                  <div className={styles.categoryInfo}>
+                    <h4 className={styles.categoryName}>League of Legends</h4>
+                    <p className={styles.categoryViewers}>🔴 172K viewers</p>
+                  </div>
+                </div>
+
+                <div className={styles.categoryCard}>
+                  <img 
+                    src="https://static-cdn.jtvnw.net/ttv-boxart/516575-285x380.jpg"
+                    alt="VALORANT"
+                    className={styles.categoryImage}
+                  />
+                  <div className={styles.categoryInfo}>
+                    <h4 className={styles.categoryName}>VALORANT</h4>
+                    <p className={styles.categoryViewers}>🔴 35K viewers</p>
+                  </div>
+                </div>
+
+                <div className={styles.categoryCard}>
+                  <img 
+                    src="https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-285x380.jpg"
+                    alt="Minecraft"
+                    className={styles.categoryImage}
+                  />
+                  <div className={styles.categoryInfo}>
+                    <h4 className={styles.categoryName}>Minecraft</h4>
+                    <p className={styles.categoryViewers}>🔴 10K viewers</p>
+                  </div>
+                </div>
+
+                <div className={styles.categoryCard}>
+                  <img 
+                    src="https://static-cdn.jtvnw.net/ttv-boxart/1003590115_IGDB-285x380.jpg"
+                    alt="Pokémon"
+                    className={styles.categoryImage}
+                  />
+                  <div className={styles.categoryInfo}>
+                    <h4 className={styles.categoryName}>Pokémon</h4>
+                    <p className={styles.categoryViewers}>🔴 13K viewers</p>
+                  </div>
+                </div>
+
+                <div className={styles.categoryCard}>
+                  <img 
+                    src="https://static-cdn.jtvnw.net/ttv-boxart/32399_IGDB-285x380.jpg"
+                    alt="Counter-Strike"
+                    className={styles.categoryImage}
+                  />
+                  <div className={styles.categoryInfo}>
+                    <h4 className={styles.categoryName}>Counter-Strike</h4>
+                    <p className={styles.categoryViewers}>🔴 14K viewers</p>
+                  </div>
+                </div>
+
+                <div className={styles.categoryCard}>
+                  <img 
+                    src="https://static-cdn.jtvnw.net/ttv-boxart/509658-285x380.jpg"
+                    alt="Just Chatting"
+                    className={styles.categoryImage}
+                  />
+                  <div className={styles.categoryInfo}>
+                    <h4 className={styles.categoryName}>Just Chatting</h4>
+                    <p className={styles.categoryViewers}>🔴 292K viewers</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         );
 
       case "activity":
         return (
           <div className={styles.tabContent}>
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>📊</div>
-              <h2 className={styles.emptyTitle}>Activity</h2>
-              <p className={styles.emptyText}>
-                Your recent streams and history will appear here
-              </p>
+            <div className={styles.activityHeader}>
+              <h2 className={styles.activityTitle}>Recent Tips</h2>
+              <p className={styles.activitySubtitle}>Your tipping history</p>
+            </div>
+            <div className={styles.activityList}>
+              {simulatedTips.map((tip) => (
+                <div key={tip.id} className={styles.activityItem}>
+                  <div className={styles.activityIcon}>{tip.emoji}</div>
+                  <div className={styles.activityDetails}>
+                    <div className={styles.activityStreamer}>{tip.streamer}</div>
+                    <div className={styles.activityTime}>{tip.timestamp}</div>
+                  </div>
+                  <div className={styles.activityAmount}>
+                    <div className={styles.activityAmountValue}>${tip.amount}</div>
+                    <div className={styles.activityStatus}>
+                      <span className={styles.statusDot}></span>
+                      {tip.status}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         );
@@ -257,12 +398,12 @@ export default function Home() {
               
               <div className={styles.profileStats}>
                 <div className={styles.statItem}>
-                  <div className={styles.statValue}>0</div>
-                  <div className={styles.statLabel}>Streams Watched</div>
+                  <div className={styles.statValue}>{totalTips}</div>
+                  <div className={styles.statLabel}>Total Tips</div>
                 </div>
                 <div className={styles.statItem}>
-                  <div className={styles.statValue}>0</div>
-                  <div className={styles.statLabel}>Favorites</div>
+                  <div className={styles.statValue}>${totalAmount}</div>
+                  <div className={styles.statLabel}>Total Amount</div>
                 </div>
               </div>
             </div>
@@ -274,7 +415,11 @@ export default function Home() {
           <div className={styles.tabContent}>
             <div className={styles.aboutContent}>
               <div className={styles.aboutHeader}>
-                <div className={styles.aboutIcon}>📺</div>
+                <img 
+                  src="/blue-icon.jpg" 
+                  alt="WaveTip Logo" 
+                  className={styles.aboutLogo}
+                />
                 <h2 className={styles.aboutTitle}>WaveTip</h2>
                 <p className={styles.aboutVersion}>Version 1.0.0</p>
               </div>
@@ -282,23 +427,45 @@ export default function Home() {
               <div className={styles.aboutSection}>
                 <h3 className={styles.aboutSectionTitle}>About</h3>
                 <p className={styles.aboutText}>
-                  Watch your favorite Twitch streamers directly in Base App. 
-                  Search any channel and enjoy live streams.
+                  WaveTip is a Base mini-app that lets you send tips directly to your favorite Twitch streamers with only 1% fees. Watch streams and support creators with USDC on Base.
                 </p>
               </div>
 
               <div className={styles.aboutSection}>
-                <h3 className={styles.aboutSectionTitle}>Features</h3>
-                <ul className={styles.aboutList}>
-                  <li>🔍 Real-time search</li>
-                  <li>🔴 Live streams</li>
-                  <li>📺 Integrated player</li>
-                  <li>📱 Mobile interface</li>
-                </ul>
+                <h3 className={styles.aboutSectionTitle}>Frequently Asked Questions</h3>
+                <div className={styles.faqList}>
+                  <div className={styles.faqItem}>
+                    <h4 className={styles.faqQuestion}>What is WaveTip?</h4>
+                    <p className={styles.faqAnswer}>
+                      WaveTip is a Base mini-app that lets you send tips directly to your favorite Twitch streamers with only 1% fees. Tips are sent in USDC on Base Sepolia.
+                    </p>
+                  </div>
+
+                  <div className={styles.faqItem}>
+                    <h4 className={styles.faqQuestion}>Which platforms are supported?</h4>
+                    <p className={styles.faqAnswer}>
+                      WaveTip is available as a mini-app on Base App and works on any mobile browser.
+                    </p>
+                  </div>
+
+                  <div className={styles.faqItem}>
+                    <h4 className={styles.faqQuestion}>How do I send a tip to a streamer?</h4>
+                    <p className={styles.faqAnswer}>
+                      Connect your wallet in the Profile tab, search for a Twitch streamer, and click on the tip amount you want to send ($1, $2, $5, or custom).
+                    </p>
+                  </div>
+
+                  <div className={styles.faqItem}>
+                    <h4 className={styles.faqQuestion}>What are the fees?</h4>
+                    <p className={styles.faqAnswer}>
+                      WaveTip charges only 1% on all tips. This covers smart contract operations and platform maintenance.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className={styles.aboutFooter}>
-                <p className={styles.aboutCredit}>Built on Base</p>
+                <p className={styles.aboutCredit}>Built with ❤️ on Base</p>
               </div>
             </div>
           </div>

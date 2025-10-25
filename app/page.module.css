@@ -494,6 +494,8 @@
   width: 100%;
   max-width: 500px;
   padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 65px);
 }
 
 .aboutHeader {
@@ -501,9 +503,13 @@
   margin-bottom: 2rem;
 }
 
-.aboutIcon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+.aboutLogo {
+  width: 100px;
+  height: 100px;
+  border-radius: 20px;
+  margin: 0 auto 1rem;
+  display: block;
+  box-shadow: 0 4px 20px rgba(0, 106, 254, 0.3);
 }
 
 .aboutTitle {
@@ -566,6 +572,40 @@
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.4);
   font-weight: 500;
+}
+
+/* FAQ Section */
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.faqItem {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 106, 254, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.faqItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 106, 254, 0.4);
+}
+
+.faqQuestion {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #006afe;
+  margin: 0 0 0.75rem 0;
+}
+
+.faqAnswer {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
 }
 
 /* Stream Container */
@@ -652,4 +692,184 @@
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.7);
   margin: 0;
+}
+
+/* Activity Section */
+.activityHeader {
+  text-align: center;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid rgba(0, 106, 254, 0.2);
+}
+
+.activityTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 0.5rem 0;
+}
+
+.activitySubtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.activityList {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 106, 254, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.activityItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 106, 254, 0.4);
+  transform: translateY(-2px);
+}
+
+.activityIcon {
+  font-size: 2rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 106, 254, 0.15);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.activityDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.activityStreamer {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize;
+}
+
+.activityTime {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.activityAmount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.activityAmountValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #006afe;
+}
+
+.activityStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: capitalize;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ff88;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Categories Section */
+.categoriesSection {
+  padding: 1.5rem;
+}
+
+.categoriesTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 1rem 0;
+}
+
+.categoriesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.categoryCard {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 106, 254, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.categoryCard:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 106, 254, 0.4);
+  transform: translateY(-2px);
+}
+
+.categoryImage {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  display: block;
+}
+
+.categoryInfo {
+  padding: 0.75rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.6));
+  backdrop-filter: blur(5px);
+}
+
+.categoryName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 0.25rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.categoryViewers {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-weight: 500;
 }
