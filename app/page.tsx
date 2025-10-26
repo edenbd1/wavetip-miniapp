@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { Address, Avatar, Name, Identity } from '@coinbase/onchainkit/identity';
 import { useAccount, useDisconnect } from 'wagmi';
@@ -21,6 +21,7 @@ type Tab = "home" | "activity" | "profile" | "about";
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const [activeTab, setActiveTab] = useState<Tab>("home");
@@ -85,6 +86,14 @@ export default function Home() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
+
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['home', 'activity', 'profile', 'about'].includes(tab)) {
+      setActiveTab(tab as Tab);
+    }
+  }, [searchParams]);
  
   // Close suggestions when clicking outside
   useEffect(() => {

@@ -504,7 +504,7 @@ export default function StreamerPage() {
       <nav className={styles.bottomNav}>
         <button
           className={styles.navItem}
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/?tab=home')}
         >
           <div className={styles.navIconWrapper}>
             <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -517,7 +517,7 @@ export default function StreamerPage() {
 
         <button
           className={styles.navItem}
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/?tab=activity')}
         >
           <div className={styles.navIconWrapper}>
             <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -529,7 +529,7 @@ export default function StreamerPage() {
 
         <button
           className={styles.navItem}
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/?tab=profile')}
         >
           <div className={styles.navIconWrapper}>
             <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -542,7 +542,7 @@ export default function StreamerPage() {
 
         <button
           className={styles.navItem}
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/?tab=about')}
         >
           <div className={styles.navIconWrapper}>
             <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
