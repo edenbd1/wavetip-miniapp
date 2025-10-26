@@ -71,10 +71,16 @@ export default function StreamerPage() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [tipStatus, setTipStatus] = useState<'idle' | 'pending' | 'approving' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [txStartTime, setTxStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [optimisticBalance, setOptimisticBalance] = useState<bigint | null>(null);
+  const [pendingTipAmount, setPendingTipAmount] = useState<bigint | null>(null);
 
-  const { writeContract, data: hash, isPending } = useWriteContract();
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
+    confirmations: 1,
+    timeout: 60000, // 60 secondes max
   });
 
   // Lire l'allowance USDC
@@ -89,7 +95,7 @@ export default function StreamerPage() {
   });
 
   // Lire la balance USDC
-  const { data: usdcBalance } = useReadContract({
+  const { data: usdcBalance, refetch: refetchBalance } = useReadContract({
     address: USDC_ADDRESS,
     abi: USDC_ABI,
     functionName: 'balanceOf',
@@ -105,17 +111,80 @@ export default function StreamerPage() {
     }
   }, [setFrameReady, isFrameReady]);
 
+  // Tracker le temps écoulé pendant les transactions
+  useEffect(() => {
+    if (isConfirming && (tipStatus === 'pending' || tipStatus === 'approving')) {
+      if (!txStartTime) {
+        setTxStartTime(Date.now());
+      }
+      
+      const interval = setInterval(() => {
+        if (txStartTime) {
+          const elapsed = Math.floor((Date.now() - txStartTime) / 1000);
+          setElapsedTime(elapsed);
+        }
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setTxStartTime(null);
+      setElapsedTime(0);
+    }
+  }, [isConfirming, tipStatus, txStartTime]);
+
+  // Note: Les messages de progression sont affichés directement dans le JSX
+  // pour éviter les duplications avec errorMessage
+
+  // Mettre à jour la balance de façon optimiste quand la transaction est envoyée
+  useEffect(() => {
+    if (hash && tipStatus === 'pending' && pendingTipAmount && usdcBalance) {
+      // Déduire immédiatement le montant de la balance affichée
+      const newBalance = usdcBalance - pendingTipAmount;
+      setOptimisticBalance(newBalance);
+      console.log('💰 Optimistic balance update:', formatUnits(newBalance, 6), 'USDC');
+    }
+  }, [hash, tipStatus, pendingTipAmount, usdcBalance]);
+
+  // Gérer les erreurs d'écriture
+  useEffect(() => {
+    if (writeError) {
+      console.error('Write error:', writeError);
+      let message = 'Transaction failed';
+      if (writeError.message.includes('User rejected')) {
+        message = 'Transaction rejected by user';
+      } else if (writeError.message.includes('insufficient funds')) {
+        message = 'Insufficient funds for gas';
+      }
+      setErrorMessage(message);
+      setTipStatus('error');
+      // Restaurer la balance réelle en cas d'erreur
+      setOptimisticBalance(null);
+      setPendingTipAmount(null);
+      setTimeout(() => {
+        setTipStatus('idle');
+        setErrorMessage('');
+      }, 5000);
+    }
+  }, [writeError]);
+
   useEffect(() => {
     if (isConfirmed) {
+      console.log('Transaction confirmed! Hash:', hash);
       // Si c'était un approve, refetch l'allowance et réinitialiser
       if (tipStatus === 'approving') {
         refetchAllowance();
+        refetchBalance(); // Rafraîchir la balance après l'approval
         setTipStatus('idle');
         setErrorMessage('✅ USDC approved! Click tip again to send.');
         setTimeout(() => setErrorMessage(''), 5000);
-      } else {
-        // C'était un tip
+      } else if (tipStatus === 'pending') {
+        // C'était un tip - rafraîchir la balance réelle et nettoyer l'optimistic update
+        refetchBalance();
+        console.log('✅ Tip confirmed! Refreshing balance...');
+        setOptimisticBalance(null);
+        setPendingTipAmount(null);
         setTipStatus('success');
+        setErrorMessage('');
         setTimeout(() => {
           setTipStatus('idle');
           setShowCustomInput(false);
@@ -123,7 +192,24 @@ export default function StreamerPage() {
         }, 3000);
       }
     }
-  }, [isConfirmed, tipStatus, refetchAllowance]);
+  }, [isConfirmed, tipStatus, refetchAllowance, refetchBalance, hash]);
+
+  // Gérer le rejet de transaction
+  useEffect(() => {
+    if (!isPending && !isConfirming && !isConfirmed && hash === undefined) {
+      if (tipStatus === 'approving' || tipStatus === 'pending') {
+        // Transaction rejetée ou erreur - restaurer la balance
+        setOptimisticBalance(null);
+        setPendingTipAmount(null);
+        setTimeout(() => {
+          if (tipStatus === 'approving' || tipStatus === 'pending') {
+            setTipStatus('idle');
+            setErrorMessage('');
+          }
+        }, 1000);
+      }
+    }
+  }, [isPending, isConfirming, isConfirmed, hash, tipStatus]);
 
   const handleTip = async (amount: string) => {
     if (!isConnected || !address) {
@@ -154,17 +240,31 @@ export default function StreamerPage() {
       // 2. Vérifier l'allowance et approuver si nécessaire
       if (allowance === undefined || allowance < amountInWei) {
         setTipStatus('approving');
-        console.log('Approval required, requesting approve...');
+        console.log('🔓 Approval required, requesting approve...');
+        console.log('Current allowance:', allowance?.toString());
+        console.log('Required amount:', amountInWei.toString());
         
-        // Approuver un montant élevé pour éviter de réapprouver à chaque fois
-        const approveAmount = parseUnits('1000000', 6); // 1M USDC
+        // Approuver un montant raisonnable pour éviter de réapprouver à chaque fois
+        const approveAmount = parseUnits('100', 6); // 100 USDC
+        console.log('Approving:', approveAmount.toString(), 'USDC');
         
-        writeContract({
-          address: USDC_ADDRESS,
-          abi: USDC_ABI,
-          functionName: 'approve',
-          args: [WAVETIP_CONTRACT, approveAmount],
-        });
+        try {
+          writeContract({
+            address: USDC_ADDRESS,
+            abi: USDC_ABI,
+            functionName: 'approve',
+            args: [WAVETIP_CONTRACT, approveAmount],
+          });
+          console.log('✅ Approval transaction sent');
+        } catch (err) {
+          console.error('❌ Error sending approval:', err);
+          setErrorMessage('Failed to send approval transaction');
+          setTipStatus('error');
+          setTimeout(() => {
+            setTipStatus('idle');
+            setErrorMessage('');
+          }, 5000);
+        }
         
         // Attendre que l'approve soit confirmé avant de continuer
         // L'utilisateur devra cliquer à nouveau sur le bouton tip après l'approve
@@ -173,6 +273,7 @@ export default function StreamerPage() {
 
       // 3. Envoyer le tip
       setTipStatus('pending');
+      setPendingTipAmount(amountInWei); // Sauvegarder le montant pour l'update optimiste
       console.log('Sending tip:', { channel, amount: formatUnits(amountInWei, 6) });
       
       writeContract({
@@ -254,7 +355,7 @@ export default function StreamerPage() {
           <h3 className={styles.tipTitle}>💰 Tip {channel} with USDC</h3>
           {isConnected && usdcBalance !== undefined && (
             <p className={styles.balanceInfo}>
-              Balance: {parseFloat(formatUnits(usdcBalance, 6)).toFixed(2)} USDC
+              Balance: {parseFloat(formatUnits(optimisticBalance ?? usdcBalance, 6)).toFixed(2)} USDC
             </p>
           )}
           {!isConnected && (
@@ -317,10 +418,65 @@ export default function StreamerPage() {
             )}
 
             {tipStatus === 'approving' && (
-              <p className={styles.tipStatusPending}>⏳ Approving USDC... Please confirm in your wallet</p>
+              <div className={styles.tipStatusContainer}>
+                <p className={styles.tipStatusPending}>
+                  {isPending && '👛 Confirm approval in your wallet...'}
+                  {isConfirming && `⏳ Approving USDC on blockchain... (${elapsedTime}s)`}
+                  {!isPending && !isConfirming && '⏳ Preparing approval...'}
+                </p>
+                {hash && (
+                  <a 
+                    href={`https://sepolia.basescan.org/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.txLink}
+                  >
+                    🔍 View transaction on explorer
+                  </a>
+                )}
+                {isConfirming && elapsedTime > 10 && (
+                  <p className={styles.tipStatusInfo}>
+                    ℹ️ Base Sepolia testnet can be slow. Please wait...
+                  </p>
+                )}
+                {(isConfirming && elapsedTime > 30) && (
+                  <button 
+                    onClick={() => {
+                      setTipStatus('idle');
+                      setErrorMessage('');
+                      setTxStartTime(null);
+                      setElapsedTime(0);
+                    }}
+                    className={styles.cancelButton}
+                  >
+                    Reset & Try Again
+                  </button>
+                )}
+              </div>
             )}
             {(isPending || isConfirming || tipStatus === 'pending') && tipStatus !== 'approving' && (
-              <p className={styles.tipStatusPending}>⏳ Sending tip...</p>
+              <div className={styles.tipStatusContainer}>
+                <p className={styles.tipStatusPending}>
+                  {isPending && '👛 Confirm tip in your wallet...'}
+                  {isConfirming && `⏳ Sending tip on blockchain... (${elapsedTime}s)`}
+                  {!isPending && !isConfirming && '⏳ Preparing transaction...'}
+                </p>
+                {hash && (
+                  <a 
+                    href={`https://sepolia.basescan.org/tx/${hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.txLink}
+                  >
+                    🔍 View transaction on explorer
+                  </a>
+                )}
+                {isConfirming && elapsedTime > 10 && (
+                  <p className={styles.tipStatusInfo}>
+                    ℹ️ Base Sepolia testnet can be slow. Please wait...
+                  </p>
+                )}
+              </div>
             )}
             {tipStatus === 'success' && (
               <p className={styles.tipStatusSuccess}>✅ Tip sent successfully!</p>
@@ -328,7 +484,7 @@ export default function StreamerPage() {
             {tipStatus === 'error' && (
               <p className={styles.tipStatusError}>❌ {errorMessage || 'Error sending tip'}</p>
             )}
-            {errorMessage && tipStatus !== 'error' && (
+            {errorMessage && tipStatus === 'idle' && (
               <p className={styles.tipStatusInfo}>{errorMessage}</p>
             )}
           </div>
