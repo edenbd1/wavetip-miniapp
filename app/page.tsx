@@ -2,14 +2,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter } from "next/navigation";
-import { 
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from '@coinbase/onchainkit/wallet';
+import { ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { Address, Avatar, Name, Identity } from '@coinbase/onchainkit/identity';
-import { useAccount } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import styles from "./page.module.css";
 
 interface TwitchChannel {
@@ -27,6 +22,7 @@ export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
   const router = useRouter();
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [channelName, setChannelName] = useState("");
   const [suggestions, setSuggestions] = useState<TwitchChannel[]>([]);
@@ -361,7 +357,17 @@ export default function Home() {
 
               {/* Wallet Connection */}
               <div className={styles.walletSection}>
-                <h3 className={styles.sectionTitle}>Wallet</h3>
+                <div className={styles.walletHeader}>
+                  <h3 className={styles.sectionTitle}>Wallet</h3>
+                  {isConnected && address && (
+                    <button 
+                      onClick={() => disconnect()} 
+                      className={styles.logoutButton}
+                    >
+                      Disconnect
+                    </button>
+                  )}
+                </div>
                 {isConnected && address ? (
                   <div className={styles.walletConnected}>
                     <Identity
@@ -372,26 +378,16 @@ export default function Home() {
                       <Name className={styles.walletName} />
                       <Address className={styles.walletAddress} />
                     </Identity>
-                    <Wallet>
-                      <WalletDropdown>
-                        <WalletDropdownDisconnect />
-                      </WalletDropdown>
-                    </Wallet>
                   </div>
                 ) : (
                   <div className={styles.walletDisconnected}>
                     <p className={styles.walletDescription}>
                       Connect your wallet to tip streamers with USDC on Base
                     </p>
-                    <Wallet>
-                      <ConnectWallet className={styles.connectButton}>
-                        <Avatar className={styles.avatarConnectButton} />
-                        <Name />
-                      </ConnectWallet>
-                      <WalletDropdown>
-                        <WalletDropdownDisconnect />
-                      </WalletDropdown>
-                    </Wallet>
+                    <ConnectWallet className={styles.connectButton}>
+                      <Avatar className={styles.avatarConnectButton} />
+                      <Name />
+                    </ConnectWallet>
                   </div>
                 )}
               </div>
