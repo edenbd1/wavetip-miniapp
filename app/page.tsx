@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ConnectWallet } from '@coinbase/onchainkit/wallet';
@@ -18,7 +18,7 @@ interface TwitchChannel {
 
 type Tab = "home" | "activity" | "profile" | "about";
 
-export default function Home() {
+function HomeContent() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -536,8 +536,16 @@ export default function Home() {
             </svg>
           </div>
           <span className={styles.navLabel}>About</span>
-            </button>
+        </button>
       </nav>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

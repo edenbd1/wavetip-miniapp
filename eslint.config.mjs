@@ -20,6 +20,7 @@ const eslintConfig = [
           varsIgnorePattern: "^_",
         },
       ],
+      "@next/next/no-img-element": "off",
     },
   },
 ];
