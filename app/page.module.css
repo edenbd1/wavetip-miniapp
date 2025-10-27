@@ -485,6 +485,69 @@
   display: none;
 }
 
+.networkInfo {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 106, 254, 0.1);
+  border: 1px solid rgba(0, 106, 254, 0.3);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.networkInfo strong {
+  color: #006afe;
+  font-weight: 600;
+}
+
+.networkWarning {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.4);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.networkWarning strong {
+  color: #ff3b30;
+  font-weight: 600;
+}
+
+.networkWarningContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.networkWarningText {
+  margin: 0;
+  text-align: center;
+}
+
+.switchNetworkButton {
+  background: linear-gradient(135deg, #ff3b30 0%, #cc2e24 100%);
+  color: white;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3);
+}
+
+.switchNetworkButton:hover {
+  background: linear-gradient(135deg, #ff6259 0%, #ff3b30 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
+}
+
 .profileStats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

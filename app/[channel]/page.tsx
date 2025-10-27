@@ -1,9 +1,10 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useEffect, useState } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useEffect, useState, useCallback } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSwitchChain } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
+import { baseSepolia } from 'wagmi/chains';
 import styles from "./page.module.css";
 
 // WaveTip Contract on Base Sepolia
@@ -64,8 +65,29 @@ export default function StreamerPage() {
   const params = useParams();
   const router = useRouter();
   const { isFrameReady, setFrameReady } = useMiniKit();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
+  const { switchChain } = useSwitchChain();
   const channel = (params.channel as string).toLowerCase();
+  
+  // Get chainId from the connected wallet's chain
+  const chainId = chain?.id || 0;
+  
+  // Get network name from chainId
+  const getNetworkName = useCallback((id: number) => {
+    const networks: { [key: number]: string } = {
+      1: 'Ethereum Mainnet',
+      5: 'Goerli',
+      11155111: 'Sepolia',
+      8453: 'Base Mainnet',
+      84532: 'Base Sepolia',
+      137: 'Polygon',
+      42161: 'Arbitrum',
+      10: 'Optimism',
+    };
+    return networks[id] || `Unknown Network (${id})`;
+  }, []);
+
+  const isCorrectNetwork = chainId === 84532; // Base Sepolia
   
   const [customAmount, setCustomAmount] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -110,6 +132,35 @@ export default function StreamerPage() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
+
+  // Auto-switch to Base Sepolia when wallet connects
+  useEffect(() => {
+    if (isConnected && chainId > 0) {
+      console.log(`📡 Connected wallet - chainId: ${chainId}, chain name: ${chain?.name || 'unknown'}`);
+      console.log(`🎯 Target network - chainId: ${baseSepolia.id} (Base Sepolia)`);
+      console.log(`✅ Match: ${chainId === baseSepolia.id}`);
+      
+      if (chainId !== baseSepolia.id && switchChain) {
+        console.log(`🔄 Auto-switching to Base Sepolia (chainId ${baseSepolia.id})`);
+        try {
+          switchChain({ chainId: baseSepolia.id });
+        } catch (error) {
+          console.error('❌ Failed to switch network:', error);
+        }
+      }
+    }
+  }, [isConnected, chainId, chain, switchChain]);
+
+  // Manual network switch function
+  const handleSwitchNetwork = () => {
+    if (switchChain) {
+      try {
+        switchChain({ chainId: baseSepolia.id });
+      } catch (error) {
+        console.error('❌ Failed to switch network:', error);
+      }
+    }
+  };
 
   // Tracker le temps écoulé pendant les transactions
   useEffect(() => {
@@ -365,32 +416,51 @@ export default function StreamerPage() {
 
         {isConnected ? (
           <div className={styles.tipContent}>
+            {/* Network Status */}
+            <div className={isCorrectNetwork ? styles.networkInfo : styles.networkWarning}>
+              {isCorrectNetwork ? (
+                <>✅ Connected to <strong>{getNetworkName(chainId)}</strong></>
+                ) : (
+                  <div className={styles.networkWarningContent}>
+                    <p className={styles.networkWarningText}>
+                      ⚠️ Wrong network
+                    </p>
+                    <button 
+                      onClick={handleSwitchNetwork}
+                      className={styles.switchNetworkButton}
+                    >
+                      🔄 Switch to Base Sepolia
+                    </button>
+                  </div>
+                )}
+            </div>
+
             <div className={styles.tipButtons}>
               <button
                 onClick={() => handleTip('1')}
                 className={styles.tipButton}
-                disabled={isPending || isConfirming || tipStatus === 'pending'}
+                disabled={!isCorrectNetwork || isPending || isConfirming || tipStatus === 'pending'}
               >
                 $1
               </button>
               <button
                 onClick={() => handleTip('2')}
                 className={styles.tipButton}
-                disabled={isPending || isConfirming || tipStatus === 'pending'}
+                disabled={!isCorrectNetwork || isPending || isConfirming || tipStatus === 'pending'}
               >
                 $2
               </button>
               <button
                 onClick={() => handleTip('5')}
                 className={styles.tipButton}
-                disabled={isPending || isConfirming || tipStatus === 'pending'}
+                disabled={!isCorrectNetwork || isPending || isConfirming || tipStatus === 'pending'}
               >
                 $5
               </button>
               <button
                 onClick={() => setShowCustomInput(!showCustomInput)}
                 className={`${styles.tipButton} ${styles.tipButtonCustom}`}
-                disabled={isPending || isConfirming || tipStatus === 'pending'}
+                disabled={!isCorrectNetwork || isPending || isConfirming || tipStatus === 'pending'}
               >
                 Custom
               </button>
@@ -410,7 +480,7 @@ export default function StreamerPage() {
                 <button
                   onClick={handleCustomTip}
                   className={styles.sendCustomButton}
-                  disabled={isPending || isConfirming || tipStatus === 'pending'}
+                  disabled={!isCorrectNetwork || isPending || isConfirming || tipStatus === 'pending'}
                 >
                   Send
                 </button>

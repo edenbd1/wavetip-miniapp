@@ -4,7 +4,8 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { Address, Avatar, Name, Identity } from '@coinbase/onchainkit/identity';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSwitchChain } from 'wagmi';
+import { baseSepolia } from 'wagmi/chains';
 import styles from "./page.module.css";
 
 interface TwitchChannel {
@@ -22,15 +23,36 @@ function HomeContent() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const { disconnect } = useDisconnect();
+  const { switchChain } = useSwitchChain();
   const [activeTab, setActiveTab] = useState<Tab>("home");
+  
+  // Get chainId from the connected wallet's chain
+  const chainId = chain?.id || 0;
   const [channelName, setChannelName] = useState("");
   const [suggestions, setSuggestions] = useState<TwitchChannel[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState("");
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Get network name from chainId
+  const getNetworkName = useCallback((id: number) => {
+    const networks: { [key: number]: string } = {
+      1: 'Ethereum Mainnet',
+      5: 'Goerli',
+      11155111: 'Sepolia',
+      8453: 'Base Mainnet',
+      84532: 'Base Sepolia',
+      137: 'Polygon',
+      42161: 'Arbitrum',
+      10: 'Optimism',
+    };
+    return networks[id] || `Unknown Network (${id})`;
+  }, []);
+
+  const isCorrectNetwork = chainId === 84532; // Base Sepolia
 
   // Simulated tips data
   const simulatedTips = [
@@ -86,7 +108,7 @@ function HomeContent() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
-
+ 
   // Handle tab parameter from URL
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -94,6 +116,35 @@ function HomeContent() {
       setActiveTab(tab as Tab);
     }
   }, [searchParams]);
+
+  // Auto-switch to Base Sepolia when wallet connects
+  useEffect(() => {
+    if (isConnected && chainId > 0) {
+      console.log(`📡 Connected wallet - chainId: ${chainId}, chain name: ${chain?.name || 'unknown'}`);
+      console.log(`🎯 Target network - chainId: ${baseSepolia.id} (Base Sepolia)`);
+      console.log(`✅ Match: ${chainId === baseSepolia.id}`);
+      
+      if (chainId !== baseSepolia.id && switchChain) {
+        console.log(`🔄 Auto-switching to Base Sepolia (chainId ${baseSepolia.id})`);
+        try {
+          switchChain({ chainId: baseSepolia.id });
+        } catch (error) {
+          console.error('❌ Failed to switch network:', error);
+        }
+      }
+    }
+  }, [isConnected, chainId, chain, switchChain]);
+
+  // Manual network switch function
+  const handleSwitchNetwork = () => {
+    if (switchChain) {
+      try {
+        switchChain({ chainId: baseSepolia.id });
+      } catch (error) {
+        console.error('❌ Failed to switch network:', error);
+      }
+    }
+  };
  
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -399,6 +450,25 @@ function HomeContent() {
                     </ConnectWallet>
                   </div>
                 )}
+                {isConnected && (
+                  <div className={isCorrectNetwork ? styles.networkInfo : styles.networkWarning}>
+                    {isCorrectNetwork ? (
+                      <>✅ Connected to <strong>{getNetworkName(chainId)}</strong></>
+                      ) : (
+                        <div className={styles.networkWarningContent}>
+                          <p className={styles.networkWarningText}>
+                            ⚠️ Wrong network
+                          </p>
+                          <button 
+                            onClick={handleSwitchNetwork}
+                            className={styles.switchNetworkButton}
+                          >
+                            🔄 Switch to Base Sepolia
+                          </button>
+                        </div>
+                      )}
+                  </div>
+                )}
               </div>
               
               <div className={styles.profileStats}>
@@ -536,7 +606,7 @@ function HomeContent() {
             </svg>
           </div>
           <span className={styles.navLabel}>About</span>
-        </button>
+            </button>
       </nav>
     </div>
   );
