@@ -416,24 +416,22 @@ export default function StreamerPage() {
 
         {isConnected ? (
           <div className={styles.tipContent}>
-            {/* Network Status */}
-            <div className={isCorrectNetwork ? styles.networkInfo : styles.networkWarning}>
-              {isCorrectNetwork ? (
-                <>✅ Connected to <strong>{getNetworkName(chainId)}</strong></>
-                ) : (
-                  <div className={styles.networkWarningContent}>
-                    <p className={styles.networkWarningText}>
-                      ⚠️ Wrong network
-                    </p>
-                    <button 
-                      onClick={handleSwitchNetwork}
-                      className={styles.switchNetworkButton}
-                    >
-                      🔄 Switch to Base Sepolia
-                    </button>
-                  </div>
-                )}
-            </div>
+            {/* Network Status - Only show if wrong network */}
+            {!isCorrectNetwork && (
+              <div className={styles.networkWarning}>
+                <div className={styles.networkWarningContent}>
+                  <p className={styles.networkWarningText}>
+                    ⚠️ Wrong network
+                  </p>
+                  <button 
+                    onClick={handleSwitchNetwork}
+                    className={styles.switchNetworkButton}
+                  >
+                    🔄 Switch to Base Sepolia
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className={styles.tipButtons}>
               <button
