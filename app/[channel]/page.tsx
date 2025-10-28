@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useSwitchChain } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
@@ -71,21 +71,6 @@ export default function StreamerPage() {
   
   // Get chainId from the connected wallet's chain
   const chainId = chain?.id || 0;
-  
-  // Get network name from chainId
-  const getNetworkName = useCallback((id: number) => {
-    const networks: { [key: number]: string } = {
-      1: 'Ethereum Mainnet',
-      5: 'Goerli',
-      11155111: 'Sepolia',
-      8453: 'Base Mainnet',
-      84532: 'Base Sepolia',
-      137: 'Polygon',
-      42161: 'Arbitrum',
-      10: 'Optimism',
-    };
-    return networks[id] || `Unknown Network (${id})`;
-  }, []);
 
   const isCorrectNetwork = chainId === 84532; // Base Sepolia
   
